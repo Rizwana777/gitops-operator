@@ -286,6 +286,10 @@ func (r *ReconcileGitopsService) Reconcile(ctx context.Context, request reconcil
 
 	r.cleanKAMResources(ctx, reqLogger)
 
+	if err := r.cleanupOldPluginResources(ctx); err != nil {
+		reqLogger.Error(err, "Failed to cleanup old plugin resources")
+	}
+
 	if !r.DisableDefaultInstall {
 		// Create/reconcile the default Argo CD instance, unless default install is disabled
 		if result, err := r.reconcileDefaultArgoCDInstance(instance, reqLogger); err != nil {
@@ -355,14 +359,7 @@ func (r *ReconcileGitopsService) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, nil
 	}
 
-	result, err := r.reconcilePlugin(instance, request)
-	if err != nil {
-		return result, err
-	}
-
-	r.cleanupOldPluginResources(ctx)
-
-	return result, nil
+	return r.reconcilePlugin(instance, request)
 }
 
 // Detect the unsupported KAM components across Deployments , Routes , Services and deletes them to perform cleanup as KAM is no longer supported since 1.15
